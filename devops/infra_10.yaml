@@ -1,0 +1,116 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: password-strength-config-10
+  namespace: production
+data:
+  ANALYZER_VERSION: 'v2026.1'
+  HASH_ALGORITHM: 'pbkdf2_sha256'
+  ENABLE_LOGGING: 'true'
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: password-analyzer-10
+  namespace: production
+  labels:
+    app: password-analyzer
+    version: v2026
+    region: deployment-10
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: password-analyzer
+      tier: backend
+      deployment: 10
+  template:
+    metadata:
+      labels:
+        app: password-analyzer
+        tier: backend
+        deployment: 10
+    spec:
+      containers:
+      - name: analyzer
+        image: password-analyzer:v2026.1-alpine
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 9090
+          name: metrics
+        env:
+        - name: DEPLOYMENT_ID
+          value: "deployment-10"
+        - name: LOG_LEVEL
+          value: "INFO"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: password-analyzer-hpa-10
+  namespace: production
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: password-analyzer-10
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: password-analyzer-service-10
+  namespace: production
+  labels:
+    app: password-analyzer
+spec:
+  type: LoadBalancer
+  selector:
+    app: password-analyzer
+    deployment: 10
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+    protocol: TCP
+  - name: metrics
+    port: 9090
+    targetPort: 9090
+    protocol: TCP
+  sessionAffinity: ClientIP
