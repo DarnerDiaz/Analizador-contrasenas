@@ -4,13 +4,12 @@ Generador de reportes PDF
 
 from datetime import datetime
 from io import BytesIO
-from reportlab.lib.pagesizes import letter, A4
+from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
-from reportlab.pdfgen import canvas
-from config import PDF_CONFIG, COLORS
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from config import PDF_CONFIG
 
 
 class PDFReportGenerator:
@@ -78,7 +77,6 @@ class PDFReportGenerator:
         # Tabla de resultados
         score = analysis['score']
         strength = analysis['strength']
-        color = PDFReportGenerator.get_color_for_score(score)
 
         results_data = [
             ['Métrica', 'Valor'],

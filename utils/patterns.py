@@ -67,9 +67,9 @@ class PatternDetector:
         """Detecta caracteres repetidos (aaaa, 1111, etc)"""
         repeated = {}
         for char in set(password):
-            pattern = char + '{3,}'
+            pattern = re.escape(char) + '{3,}'
             if re.search(pattern, password):
-                repeated[char] = len(re.findall(char, password))
+                repeated[char] = len(re.findall(re.escape(char), password))
         return repeated if repeated else None
 
     @staticmethod
@@ -143,7 +143,9 @@ class PatternDetector:
         recommendations = []
 
         if "dates" in patterns:
-            recommendations.append("❌ Evita usar fechas (nacimiento, aniversarios). Utiliza datos personales no predecibles.")
+            msg = ("❌ Evita usar fechas (nacimiento, aniversarios). "
+                   "Utiliza datos personales no predecibles.")
+            recommendations.append(msg)
 
         if "common_words" in patterns:
             recommendations.append("❌ Contiene palabras comunes débiles. Reemplazarlas con términos aleatorios.")

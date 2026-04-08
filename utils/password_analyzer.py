@@ -4,7 +4,7 @@ Analizador de fortaleza de contraseñas
 
 import math
 import re
-from typing import Dict, Tuple
+from typing import Dict
 import zxcvbn
 from config import PASSWORD_CONFIG
 
