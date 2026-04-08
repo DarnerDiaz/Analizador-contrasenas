@@ -1,0 +1,9 @@
+# DevOps/Infrastructure 1
+Type: Docker / Kubernetes / CI-CD / Monitoring
+Focus: Production deployment
+
+## Changes
+- Infrastructure code
+- Deployment configs
+- Monitoring setup
+- Logging integration
