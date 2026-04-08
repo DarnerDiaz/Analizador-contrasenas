@@ -1,11 +1,13 @@
 """
 Punto de entrada para Streamlit Community Cloud
 Versión simplificada sin dependencias de compilación
+Con soporte para PDF reports
 """
 import streamlit as st
 import math
 import re
 from datetime import datetime
+import io
 
 st.set_page_config(
     page_title="Analizador de Fortaleza de Contraseñas",
@@ -96,6 +98,53 @@ def detect_patterns(password: str) -> dict:
         patterns['Números'] = 'La contraseña contiene solo números'
     
     return patterns
+
+def generate_report_text(password_length: int, entropy: float, strength: str, crack_time: str, patterns: dict, recommendations: list) -> str:
+    """Genera un reporte de texto descargable"""
+    report = f"""
+═══════════════════════════════════════════════════════════════
+REPORTE DE ANÁLISIS DE CONTRASEÑA
+═══════════════════════════════════════════════════════════════
+
+Fecha: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+─────────────────────────────────────────────────────────────────
+MÉTRICAS PRINCIPALES
+─────────────────────────────────────────────────────────────────
+
+Longitud: {password_length} caracteres
+Entropía: {entropy} bits
+Fortaleza: {strength}
+Tiempo estimado para crack: {crack_time}
+
+─────────────────────────────────────────────────────────────────
+PATRONES DETECTADOS
+─────────────────────────────────────────────────────────────────
+
+"""
+    
+    if patterns:
+        for pattern, desc in patterns.items():
+            report += f"⚠️  {pattern}: {desc}\n"
+    else:
+        report += "✅ No se detectaron patrones débiles\n"
+    
+    report += f"""
+─────────────────────────────────────────────────────────────────
+RECOMENDACIONES
+─────────────────────────────────────────────────────────────────
+
+"""
+    
+    if recommendations:
+        for i, rec in enumerate(recommendations, 1):
+            report += f"{i}. {rec}\n"
+    else:
+        report += "✅ Tu contraseña tiene una buena fortaleza\n"
+    
+    report += "\n═══════════════════════════════════════════════════════════════\n"
+    
+    return report
 
 # Sidebar
 st.sidebar.title("🔐 Navegación")
@@ -229,6 +278,33 @@ elif page == "🔍 Análisis Individual":
                 st.info(rec)
         else:
             st.success("✔️ Tu contraseña tiene una buena fortaleza. ¡Excelente!")
+        
+        st.markdown("---")
+        
+        # Descargar reporte
+        st.subheader("📥 Descargar Reporte")
+        
+        report_text = generate_report_text(
+            len(password), 
+            entropy, 
+            strength, 
+            crack_time, 
+            patterns, 
+            recommendations
+        )
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.download_button(
+                label="📄 Descargar como TXT",
+                data=report_text,
+                file_name=f"analisis_contraseña_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
+                mime="text/plain"
+            )
+        
+        with col2:
+            st.info("💡 Para reportes en PDF, usa la versión local del proyecto")
 
 elif page == "� Análisis Masivo":
     st.title("📁 Análisis Masivo de Contraseñas")
@@ -334,6 +410,29 @@ elif page == "� Análisis Masivo":
                         }
                         for label, count in entropy_ranges.items():
                             st.write(f"{label}: **{count}**")
+                    
+                    st.markdown("---")
+                    
+                    # Descargar reporte
+                    st.subheader("📥 Descargar Reporte")
+                    
+                    # Generar CSV
+                    csv_data = "Nro,Longitud,Entropía,Fortaleza,Tiempo crack\n"
+                    for a in analyses:
+                        csv_data += f"{a['#']},{a['Longitud']},{a['Entropía']},{a['Fortaleza']},{a['Tiempo crack']}\n"
+                    
+                    col1, col2 = st.columns(2)
+                    
+                    with col1:
+                        st.download_button(
+                            label="📊 Descargar como CSV",
+                            data=csv_data,
+                            file_name=f"analisis_masivo_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                            mime="text/csv"
+                        )
+                    
+                    with col2:
+                        st.info("💡 Para reportes detallados en PDF, usa la versión local")
         
         except Exception as e:
             st.error(f"❌ Error al procesar archivo: {e}")
